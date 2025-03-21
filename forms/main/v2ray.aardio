@@ -777,17 +777,20 @@ frmXray.listview.onnotify = function(id,code,ptr){
 		}
 		case 0xFFFFFF94/*_LVN_COLUMNCLICK*/{
 			var nm = frmXray.listview.getNotifyMessage(code,ptr)
-			if(nm.iSubItem==7){
-				frmXray.listview.sortBySpeed();
-			} 
-			elseif(nm.iSubItem==6){  // 备注列（注意索引从0开始，所以备注列是6）
-       			 frmXray.listview.sortByRemark();
-    		}
-    		else {
-        		 frmXray.msgWarn("排序请点击「响应速度」或「备注」列")
-    		}
-		}
-	}
+			if(nm.iSubItem==7){  // 响应速度列
+       			 frmXray.listview.sortBySpeed();
+    		} 
+			elseif(nm.iSubItem==6){  // 备注列
+				frmXray.listview.sortByRemark();
+			}
+			elseif(nm.iSubItem==0){  // 类型列（第一列，索引为0）
+				frmXray.listview.sortByTypeAndSpeed();
+			}
+			else {
+				frmXray.msgWarn("排序请点击「类型」、「响应速度」或「备注」列")
+			}
+				}
+			}
 }
 
 // 排序函数
