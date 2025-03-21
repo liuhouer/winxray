@@ -22,7 +22,8 @@ frmXray.listview.insertColumn("加密",90)
 frmXray.listview.insertColumn("协议",50) 
 frmXray.listview.insertColumn("备注",190) 
 frmXray.listview.insertColumn("响应速度",95) 
-frmXray.listview.insertColumn("状态",-1) 
+frmXray.listview.insertColumn("状态",200) 
+frmXray.listview.insertColumn("订阅源",100) // 新增订阅源列
 frmXray.listview.setExtended(0x10000/*_LVS_EX_DOUBLEBUFFER*/);
 
 frmXray.show();
@@ -783,13 +784,11 @@ frmXray.listview.onnotify = function(id,code,ptr){
 			elseif(nm.iSubItem==6){  // 备注列
 				frmXray.listview.sortByRemark();
 			}
-			elseif(nm.iSubItem==0){  // 类型列（第一列，索引为0）
-				frmXray.listview.sortByTypeAndSpeed();
-			}
 			else {
 				frmXray.msgWarn("排序请点击「类型」、「响应速度」或「备注」列")
 			}
-				}
+			}
+				
 			}
 }
 
@@ -812,6 +811,8 @@ frmXray.listview.sortBySpeed = function () {
 		}
 		
 		ob.speed = frmXray.listview.getItemText(i,7);
+        ob.status = frmXray.listview.getItemText(i,8) || ""; // 保留状态
+        ob.subscribeName = ob.subscribeName || ""; // 保留订阅源
 		if(ob.speed=="不可用"){
 			ob.speedNum = 0xFFFE;
 		}
@@ -864,18 +865,44 @@ frmXray.listview.sortBySpeed = function () {
 		}
 	}
 	
-	outbounds.fields = {"protocol";"address";"port";"security";"network";"ps";"speed"}
+	/*
+outbounds.fields = {"protocol";"address";"port";"security";"network";"ps";"speed"}
 	config.proxy.outbounds = outbounds;
 	frmXray.listview.setTable(outbounds);	
 	outbounds.fields = {"protocol";"address";"port";"security";"network";"ps"}
+*/
+	
+	//ADDED BY JEEY
+	outbounds.fields = {
+        "protocol";      // 1. 类型
+        "address";       // 2. 服务器
+        "port";          // 3. 端口
+        "security";      // 4. 加密
+        "network";       // 5. 协议
+        "ps";            // 6. 备注
+        "speed";         // 7. 响应速度
+        "status";        // 8. 状态
+        "subscribeName"  // 9. 订阅源
+    };
+   
+   frmXray.listview.setTable(outbounds);
+   
+   
+   
 	
 	//清理用于排序的临时字段
-	for(i=1;#outbounds;1){
-		var ob = outbounds[i];
-		ob.speedNum = null;
-		ob.speed = null;
-		ob.active = null;
-	} 
+	// 清理额外字段
+    for(i=1;#outbounds;1){
+        outbounds[i].speedNum = null;
+        outbounds[i].speed = null;
+        outbounds[i].status = null;
+        outbounds[i].subscribeName = null;
+        outbounds[i].active = null;
+    }
+    outbounds.fields = {"protocol";"address";"port";"security";"network";"ps"};
+    config.proxy.outbounds = outbounds;
+    
+     //ADDED BY JEEY
 	
 	if(frmXray.listview.activeOutboundIndex){
 		frmXray.listview.setItemText("活动服务器：正常",frmXray.listview.activeOutboundIndex,8)
@@ -902,6 +929,8 @@ frmXray.listview.sortByRemark = function () {
         }
         
         ob.remark = frmXray.listview.getItemText(i,6); // 获取备注内容
+        ob.status = frmXray.listview.getItemText(i,8) || ""; // 保留状态
+        ob.subscribeName = ob.subscribeName || ""; // 保留订阅源
         if(activeIndex==i){
             ob.active = true;
         }
@@ -936,17 +965,42 @@ frmXray.listview.sortByRemark = function () {
     }
     
     // 更新列表显示
-    outbounds.fields = {"protocol";"address";"port";"security";"network";"ps";"speed"}
+    /*
+outbounds.fields = {"protocol";"address";"port";"security";"network";"ps";"speed"}
     config.proxy.outbounds = outbounds;
     frmXray.listview.setTable(outbounds);    
     outbounds.fields = {"protocol";"address";"port";"security";"network";"ps"}
+*/
+
+ //ADDED BY JEEY
+	
+    outbounds.fields = {
+        "protocol";      // 1. 类型
+        "address";       // 2. 服务器
+        "port";          // 3. 端口
+        "security";      // 4. 加密
+        "network";       // 5. 协议
+        "ps";            // 6. 备注
+        "speed";         // 7. 响应速度
+        "status";        // 8. 状态
+        "subscribeName"  // 9. 订阅源
+    };
     
-    // 清理临时字段
+    frmXray.listview.setTable(outbounds);
+    
+    // 清理额外字段
     for(i=1;#outbounds;1){
-        var ob = outbounds[i];
-        ob.remark = null;
-        ob.active = null;
-    } 
+        outbounds[i].speedNum = null;
+        outbounds[i].speed = null;
+        outbounds[i].status = null;
+        outbounds[i].remark = null;
+        outbounds[i].subscribeName = null;
+        outbounds[i].active = null;
+    }
+    outbounds.fields = {"protocol";"address";"port";"security";"network";"ps"};
+    config.proxy.outbounds = outbounds;
+    //ADDED BY JEEY
+	 
     
     // 更新活动服务器状态
     if(frmXray.listview.activeOutboundIndex){
@@ -957,105 +1011,6 @@ frmXray.listview.sortByRemark = function () {
     frmXray.listview.setColumnImage(6, desc ? 1 : 0);
 }
 
-//类型分组排序
-frmXray.listview.sortByTypeAndSpeed = function () {
-    if(frmXray.btnTcping.disabledText){
-        frmXray.msgWarn("请等待测速完成，然后再点击此排序列。");
-        return;
-    }
-    
-    var outbounds = ..table.clone(config.proxy.outbounds);
-    var activeIndex = frmXray.listview.activeOutboundIndex;
-    frmXray.onTcpingReturn = function(outboundIndex,address,succeeded,speedText){}; //避免后台线程改变activeIndex
-    
-    // 添加类型和速度字段用于排序
-    for(i=1;#outbounds;1){
-        var ob = outbounds[i];
-        if(type(ob)!="table"){
-            table.remove(outbounds,i);
-            continue;
-        }
-        
-        ob.type = frmXray.listview.getItemText(i,1); // 获取类型
-        ob.speed = frmXray.listview.getItemText(i,7); // 获取响应速度
-        
-        // 处理速度数值
-        if(ob.speed=="不可用"){
-            ob.speedNum = 0xFFFE;
-        }
-        elseif(ob.speed=="" || ob.speed=="禁止测速"){
-            ob.speedNum = 0xFFFF;
-        }
-        elseif(ob.speed=="..."){
-            frmXray.msgWarn("请等待检测速度完成，然后再点击此排序列。")
-            return;
-        }
-        else {
-            ob.speedNum = tonumber(ob.speed):-3;
-        }
-        
-        if(activeIndex==i){
-            ob.active = true;
-        }
-    }
-    
-    // 检查是否有数据
-    if(!#outbounds){
-        frmXray.msgWarn("列表为空，无法排序！");
-        return;
-    }
-    
-    // 判断升序或降序
-    var desc = frmXray.listview.getColumnImage(0) == 0;
-    if(desc){
-        table.sort(outbounds,function(b){ 
-            if(owner.type == b.type){
-                return owner.speedNum > b.speedNum; // 同类型按速度降序
-            }
-            return owner.type > b.type; // 不同类型按类型降序
-        })    
-    }
-    else {
-        table.sort(outbounds,function(b){ 
-            if(owner.type == b.type){
-                return owner.speedNum < b.speedNum; // 同类型按速度升序
-            }
-            return owner.type < b.type; // 不同类型按类型升序
-        })
-    } 
-    
-    // 更新活动服务器索引
-    frmXray.listview.activeOutboundIndex = null;
-    for(i=1;#outbounds;1){
-        if(outbounds[i].active){
-            frmXray.listview.activeOutboundIndex = i;
-            break;
-        }
-    }
-    
-    // 更新列表显示
-    outbounds.fields = {"protocol";"address";"port";"security";"network";"ps";"speed"}
-    config.proxy.outbounds = outbounds;
-    frmXray.listview.setTable(outbounds);    
-    outbounds.fields = {"protocol";"address";"port";"security";"network";"ps"}
-    
-    // 清理临时字段
-    for(i=1;#outbounds;1){
-        var ob = outbounds[i];
-        ob.type = null;
-        ob.speed = null;
-        ob.speedNum = null;
-        ob.active = null;
-    } 
-    
-    // 更新活动服务器状态
-    if(frmXray.listview.activeOutboundIndex){
-        frmXray.listview.setItemText("活动服务器：正常",frmXray.listview.activeOutboundIndex,8)
-    } 
-    
-    // 设置列头排序图标
-    frmXray.listview.setColumnImage(0, desc ? 1 : 0);
-}
 
 import win.imageList;
 var iml = win.imageList(16, 15);
@@ -1065,13 +1020,64 @@ frmXray.listview.setColumnImageList(iml);
 subscribe("uiCommand.restartV2RayCore",function(){ 
 	config.proxy.outbounds.fields = {"protocol";"address";"port";"security";"network";"ps";}
 	
-	var outbounds = config.proxy.outbounds;
-	for(i=#outbounds;1;-1){
-		if(type(outbounds[i])!="table"){
-			table.remove(outbounds,i);
-		}
-	}
-	frmXray.listview.setTable(outbounds);	 
+	var outbounds = ..table.clone(config.proxy.outbounds); // 克隆一份，避免直接修改原始数据
+    for(i=#outbounds;1;-1){
+        if(type(outbounds[i])!="table"){
+            table.remove(outbounds,i);
+        }
+    }
+	
+	//ADDED BY JEEY
+	
+	// 添加订阅源名称和状态
+    for(i=1;#outbounds;1){
+        var subscribeUrl = outbounds[i].subscribeUrl;
+        if(subscribeUrl){
+            var ps = "";
+            var cfgSubscribeUrls = ..config.proxy.subscribeUrls;
+            for(j=#cfgSubscribeUrls;1;-1){
+                var sub = cfgSubscribeUrls[j];
+                if(sub.url === subscribeUrl){
+                    ps = sub.ps || "";
+                    break;
+                }
+            }
+            outbounds[i].subscribeName = ps;
+        } else {
+            outbounds[i].subscribeName = "";
+        }
+        // 保留状态列数据（如果之前有值）
+        outbounds[i].status = frmXray.listview.getItemText(i,8) || "";
+    }
+    
+    // 修正字段顺序，确保状态和订阅源正确对应
+    outbounds.fields = {
+        "protocol";      // 1. 类型
+        "address";       // 2. 服务器
+        "port";          // 3. 端口
+        "security";      // 4. 加密
+        "network";       // 5. 协议
+        "ps";            // 6. 备注
+        "speed";         // 7. 响应速度
+        "status";        // 8. 状态
+        "subscribeName"  // 9. 订阅源
+    };
+    frmXray.listview.setTable(outbounds);    
+    
+    
+    // 清理额外字段，只保留 V2Ray 支持的字段
+    for(i=1;#outbounds;1){
+        outbounds[i].status = null;
+        outbounds[i].subscribeName = null;
+        outbounds[i].speed = null; // 如果之前有添加
+    }
+    outbounds.fields = {"protocol";"address";"port";"security";"network";"ps"};
+    config.proxy.outbounds = outbounds;
+	
+    
+    //ADDED BY JEEY
+	
+	//frmXray.listview.setTable(outbounds);	 
 	
 	if(!v2ray.core.lastDownloadingCoreFailed) frmXray.btnTcping.oncommand();
 } )
@@ -1080,13 +1086,61 @@ import process;
 if(#config.proxy.outbounds){
 	config.proxy.outbounds.fields = {"protocol";"address";"port";"security";"network";"ps";}
 	
-	var outbounds = config.proxy.outbounds;
-	for(i=#outbounds;1;-1){
-		if(type(outbounds[i])!="table"){
-			table.remove(outbounds,i);
-		}
-	}
-	frmXray.listview.setTable(outbounds);	
+	var outbounds = ..table.clone(config.proxy.outbounds);
+    for(i=#outbounds;1;-1){
+        if(type(outbounds[i])!="table"){
+            table.remove(outbounds,i);
+        }
+    }
+	
+	//ADDED BY JEEY
+	
+	// 添加订阅源名称和状态
+    for(i=1;#outbounds;1){
+        var subscribeUrl = outbounds[i].subscribeUrl;
+        if(subscribeUrl){
+            var ps = "";
+            var cfgSubscribeUrls = ..config.proxy.subscribeUrls;
+            for(j=#cfgSubscribeUrls;1;-1){
+                var sub = cfgSubscribeUrls[j];
+                if(sub.url === subscribeUrl){
+                    ps = sub.ps || "";
+                    break;
+                }
+            }
+            outbounds[i].subscribeName = ps;
+        } else {
+            outbounds[i].subscribeName = "";
+        }
+        outbounds[i].status = "";
+    }
+    
+    outbounds.fields = {
+        "protocol";      // 1. 类型
+        "address";       // 2. 服务器
+        "port";          // 3. 端口
+        "security";      // 4. 加密
+        "network";       // 5. 协议
+        "ps";            // 6. 备注
+        "speed";         // 7. 响应速度
+        "status";        // 8. 状态
+        "subscribeName"  // 9. 订阅源
+    };
+    frmXray.listview.setTable(outbounds);    
+    
+    
+    // 清理额外字段
+    for(i=1;#outbounds;1){
+        outbounds[i].status = null;
+        outbounds[i].subscribeName = null;
+        outbounds[i].speed = null;
+    }
+    outbounds.fields = {"protocol";"address";"port";"security";"network";"ps"};
+    config.proxy.outbounds = outbounds;
+	
+	//ADDED BY JEEY
+	
+	//frmXray.listview.setTable(outbounds);	
 	
 	frmXray.setTimeout( 
 		function(){

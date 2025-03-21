@@ -131,8 +131,8 @@ restart = function(editor,outbound){
 		
 		var err;
 		//prcsV2Ray,err = ..process.popen(corePath,"-c=config.json" );
-		prcsV2Ray,err = ..process.popen(corePath, corePath," run", "-c", "config.json" );
-		..publish("uiCommand.print", corePath);																		   
+		prcsV2Ray,err = ..process.popen(corePath, "run", "-c", "config.json");
+        ..publish("uiCommand.print", "执行命令: " + corePath + " run -c config.json");												   
 		if(!prcsV2Ray){
 			if( nexCore ){ nexCore.stop(); }
 	
